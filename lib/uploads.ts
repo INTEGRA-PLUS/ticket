@@ -1,7 +1,5 @@
 import "server-only";
-import { mkdir, writeFile, stat } from "node:fs/promises";
-import { createReadStream } from "node:fs";
-import { join, resolve } from "node:path";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 
 export const ALLOWED_MIME_TYPES = [
@@ -22,9 +20,19 @@ const EXTENSIONS: Record<AllowedMime, string> = {
   "image/gif": "gif",
 };
 
-function uploadDir(): string {
-  return resolve(process.env.UPLOAD_DIR ?? "./uploads");
-}
+// --- CONFIGURACIÓN MINIO HARDCODEADA ---
+const s3Client = new S3Client({
+  endpoint: "https://s3images.integracolombia.com",
+  region: "us-east-1",
+  credentials: {
+    accessKeyId: "admin",
+    secretAccessKey: "uI2IU2TS826sQbiQkunDEzddw",
+  },
+  forcePathStyle: true, 
+});
+
+const BUCKET_NAME = "public";
+// ---------------------------------------
 
 export type SavedUpload = {
   storageKey: string;
@@ -60,40 +68,53 @@ export function validateFiles(files: File[]): UploadValidationError | null {
 
 export async function saveUploads(files: File[]): Promise<SavedUpload[]> {
   if (files.length === 0) return [];
-  const dir = uploadDir();
-  await mkdir(dir, { recursive: true });
 
   const saved: SavedUpload[] = [];
   for (const file of files) {
     if (!isAllowedMime(file.type)) continue;
+    
     const ext = EXTENSIONS[file.type];
     const storageKey = `${randomUUID()}.${ext}`;
-    const buf = Buffer.from(await file.arrayBuffer());
-    await writeFile(join(dir, storageKey), buf);
-    saved.push({
-      storageKey,
-      originalName: file.name.slice(0, 255),
-      mimeType: file.type,
-      sizeBytes: file.size,
-    });
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    try {
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: storageKey,
+          Body: buffer,
+          ContentType: file.type,
+        })
+      );
+
+      saved.push({
+        storageKey,
+        originalName: file.name.slice(0, 255),
+        mimeType: file.type,
+        sizeBytes: file.size,
+      });
+    } catch (error) {
+      console.error("Error subiendo a MinIO:", error);
+    }
   }
   return saved;
 }
 
 export async function readUpload(storageKey: string) {
-  if (!/^[a-f0-9-]+\.(png|jpg|webp|gif)$/i.test(storageKey)) {
-    return null;
-  }
-  const path = join(uploadDir(), storageKey);
   try {
-    const info = await stat(path);
-    if (!info.isFile()) return null;
-    return { path, size: info.size };
-  } catch {
+    const response = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: storageKey,
+      })
+    );
+    return { 
+      stream: response.Body, 
+      size: response.ContentLength,
+      contentType: response.ContentType 
+    };
+  } catch (error) {
+    console.error("Error leyendo de MinIO:", error);
     return null;
   }
-}
-
-export function streamUpload(path: string) {
-  return createReadStream(path);
 }

@@ -3,7 +3,7 @@ import { Readable } from "node:stream";
 
 import { db } from "@/lib/db";
 import { attachments } from "@/lib/db/schema";
-import { readUpload, streamUpload } from "@/lib/uploads";
+import { readUpload } from "@/lib/uploads";
 
 export async function GET(
   _req: Request,
@@ -19,10 +19,10 @@ export async function GET(
   if (!row) return new Response("Not found", { status: 404 });
 
   const file = await readUpload(row.storageKey);
-  if (!file) return new Response("Not found", { status: 404 });
+  if (!file || !file.stream) return new Response("Not found", { status: 404 });
 
-  const nodeStream = streamUpload(file.path);
-  const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
+  // Convertimos el stream de S3 (que es un Node.js stream) a Web Stream
+  const webStream = Readable.toWeb(file.stream as Readable) as ReadableStream<Uint8Array>;
 
   return new Response(webStream, {
     headers: {
