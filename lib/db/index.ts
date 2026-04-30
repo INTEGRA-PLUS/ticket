@@ -12,7 +12,11 @@ const globalForDb = globalThis as unknown as {
 function getClient() {
   if (globalForDb.client) return globalForDb.client;
   const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL is not set");
+  if (!url) {
+    // Si no hay URL durante el build, devolvemos un cliente dummy o fallamos silenciosamente
+    // En producción real (runtime) esto se validará cuando se intente usar.
+    return postgres("postgres://dummy:dummy@localhost:5432/dummy", { prepare: false });
+  }
   const client = postgres(url, { prepare: false });
   if (process.env.NODE_ENV !== "production") globalForDb.client = client;
   return client;

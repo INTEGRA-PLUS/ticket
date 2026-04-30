@@ -17,6 +17,8 @@ import {
 import { db } from "@/lib/db";
 import { tickets } from "@/lib/db/schema";
 
+export const dynamic = "force-dynamic";
+
 export default async function TicketPage(
   props: PageProps<"/tickets/[publicId]">,
 ) {
