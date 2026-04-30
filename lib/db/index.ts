@@ -10,25 +10,28 @@ const globalForDb = globalThis as unknown as {
 };
 
 function getClient() {
-  if (globalForDb.client) return globalForDb.client;
   const url = process.env.DATABASE_URL;
   
-  // Si no hay URL (solo durante el build), usamos una dummy
+  // Durante el build no hay URL, devolvemos algo que no se guarde en memoria
   if (!url) {
     return postgres("postgres://dummy:dummy@localhost:5432/dummy", { prepare: false });
   }
 
+  if (globalForDb.client) return globalForDb.client;
+
   const client = postgres(url, { prepare: false });
-  globalForDb.client = client;
+  if (process.env.NODE_ENV !== "production") globalForDb.client = client;
   return client;
 }
 
 export const db: ReturnType<typeof drizzle<typeof schema>> =
-  globalForDb.db ??
-  (() => {
-    const d = drizzle(getClient(), { schema });
-    globalForDb.db = d;
-    return d;
-  })();
+  new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+    get(_target, prop) {
+      if (!globalForDb.db) {
+        globalForDb.db = drizzle(getClient(), { schema });
+      }
+      return Reflect.get(globalForDb.db, prop);
+    },
+  });
 
 export { schema };

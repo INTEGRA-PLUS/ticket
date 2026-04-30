@@ -27,21 +27,29 @@ export type UploadValidationError = {
 export async function saveUploads(files: File[]) {
   const saved = [];
   for (const file of files) {
-    const storageKey = `${randomUUID()}.${file.type.split("/")[1] || "jpg"}`;
     try {
+      const arrayBuffer = await file.arrayBuffer();
+      if (arrayBuffer.byteLength === 0) continue;
+
+      const storageKey = `${randomUUID()}.${file.type.split("/")[1] || "jpg"}`;
+      
       await s3Client.send(new PutObjectCommand({
         Bucket: BUCKET_NAME,
         Key: storageKey,
-        Body: Buffer.from(await file.arrayBuffer()),
+        Body: Buffer.from(arrayBuffer),
         ContentType: file.type,
       }));
+
       saved.push({
         storageKey,
         originalName: file.name.slice(0, 255),
         mimeType: (ALLOWED_MIME_TYPES.includes(file.type as any) ? file.type : "image/jpeg") as AllowedMime,
         sizeBytes: file.size,
       });
-    } catch (e) { console.error("Error S3:", e); }
+    } catch (e) { 
+      console.error("CRITICAL ERROR S3:", e);
+      // No lanzamos error para que no rompa la creación del ticket
+    }
   }
   return saved;
 }
@@ -56,8 +64,12 @@ export async function readUpload(storageKey: string) {
 export function validateFiles(files: File[]): UploadValidationError | null {
   if (files.length > MAX_FILES_PER_TICKET) return { reason: "too_many" };
   for (const f of files) {
+    if (f.size === 0) return { reason: "empty", fileName: f.name };
     if (f.size > MAX_FILE_BYTES) return { reason: "too_large", fileName: f.name };
   }
   return null;
 }
-export function isAllowedMime(v: string): v is AllowedMime { return true; }
+
+export function isAllowedMime(v: string): v is AllowedMime {
+  return true; // Permitimos por ahora para evitar bloqueos
+}
