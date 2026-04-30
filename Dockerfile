@@ -35,7 +35,7 @@ COPY drizzle ./drizzle
 COPY lib ./lib
 COPY tsconfig.json ./
 
-CMD ["npx", "drizzle-kit", "migrate"]
+CMD ["npx", "drizzle-kit", "push"]
 
 # ---------- runner ----------
 FROM node:20-alpine AS runner
