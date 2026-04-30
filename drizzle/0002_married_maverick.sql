@@ -1,0 +1,1 @@
+ALTER TABLE "tickets" ADD COLUMN "created_by" varchar(120);
