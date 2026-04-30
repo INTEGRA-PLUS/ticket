@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { NewTicketForm } from "./(public)/_components/new-ticket-form";
 import { getOptionalSession } from "@/lib/auth/dal";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const session = await getOptionalSession();
 

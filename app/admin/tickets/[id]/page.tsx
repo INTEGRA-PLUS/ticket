@@ -21,6 +21,8 @@ import { claimTicket } from "@/lib/tickets/actions";
 
 import { StatusForm } from "./_components/status-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminTicketPage(
   props: PageProps<"/admin/tickets/[id]">,
 ) {
