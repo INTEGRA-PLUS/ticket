@@ -22,6 +22,10 @@ services:
       target: migrator
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ticket_status}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: /bin/sh -c "sleep 3 && npx drizzle-kit push --force"
     restart: "no"
 
   app:
