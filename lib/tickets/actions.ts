@@ -129,15 +129,18 @@ export async function updateTicketStatus(formData: FormData) {
     status: formData.get("status"),
   });
   if (!parsed.success) {
-    throw new Error("Invalid input");
+    throw new Error("Entrada inválida");
   }
+
+  const isGuest = session.userId === "00000000-0000-0000-0000-000000000000";
 
   await db
     .update(tickets)
     .set({
       status: parsed.data.status as TicketStatus,
       updatedAt: new Date(),
-      assignedToId: session.userId,
+      // Solo asignamos si no es el usuario invitado dummy
+      ...(isGuest ? {} : { assignedToId: session.userId }),
     })
     .where(eq(tickets.id, parsed.data.ticketId));
 
@@ -148,12 +151,16 @@ export async function updateTicketStatus(formData: FormData) {
 export async function claimTicket(formData: FormData) {
   const session = await verifySession();
   const ticketId = formData.get("ticketId");
-  if (typeof ticketId !== "string") throw new Error("Invalid ticket id");
+  if (typeof ticketId !== "string") throw new Error("ID de ticket inválido");
 
-  await db
-    .update(tickets)
-    .set({ assignedToId: session.userId, updatedAt: new Date() })
-    .where(eq(tickets.id, ticketId));
+  const isGuest = session.userId === "00000000-0000-0000-0000-000000000000";
+
+  if (!isGuest) {
+    await db
+      .update(tickets)
+      .set({ assignedToId: session.userId, updatedAt: new Date() })
+      .where(eq(tickets.id, ticketId));
+  }
 
   revalidatePath("/admin");
   revalidatePath(`/admin/tickets/${ticketId}`);
