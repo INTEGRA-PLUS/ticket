@@ -31,19 +31,18 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardPage() {
   const session = await verifySession();
 
-  const myTickets = await db
+  const allTickets = await db
     .select()
     .from(tickets)
-    .where(eq(tickets.assignedToId, session.userId))
-    .orderBy(desc(tickets.updatedAt));
+    .orderBy(desc(tickets.createdAt));
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Mis tickets</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Todos los tickets</h1>
           <p className="text-muted-foreground">
-            Tickets actualmente asignados a {session.name}.
+            Listado completo de tickets en el sistema.
           </p>
         </div>
         <Button asChild>
@@ -53,15 +52,15 @@ export default async function AdminDashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Asignados a mí</CardTitle>
+          <CardTitle>Tickets recientes</CardTitle>
           <CardDescription>
-            {myTickets.length} ticket{myTickets.length === 1 ? "" : "s"}
+            {allTickets.length} ticket{allTickets.length === 1 ? "" : "s"} en total
           </CardDescription>
         </CardHeader>
         <CardContent className="px-0">
-          {myTickets.length === 0 ? (
+          {allTickets.length === 0 ? (
             <p className="px-6 text-sm text-muted-foreground">
-              Nada asignado en este momento. Los nuevos tickets aparecerán aquí una vez que los reclames.
+              No hay tickets creados todavía.
             </p>
           ) : (
             <Table>
@@ -76,7 +75,7 @@ export default async function AdminDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {myTickets.map((ticket) => (
+                {allTickets.map((ticket) => (
                   <TableRow key={ticket.id}>
                     <TableCell className="pl-6 font-medium">
                       <Link
