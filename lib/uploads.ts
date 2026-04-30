@@ -31,7 +31,7 @@ const s3Client = new S3Client({
   forcePathStyle: true, 
 });
 
-const BUCKET_NAME = "public";
+const BUCKET_NAME = "ticket";
 // ---------------------------------------
 
 export type SavedUpload = {

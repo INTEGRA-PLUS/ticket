@@ -16,33 +16,6 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
 
-  migrate:
-    build:
-      context: .
-      target: migrator
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ticket_status}
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-
-  seed:
-    build:
-      context: .
-      target: migrator
-    command: ["npx", "tsx", "lib/db/seed.ts"]
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ticket_status}
-      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@example.com}
-      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-admin12345}
-      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-Default Admin}
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-    profiles: ["seed"]
-    restart: "no"
-
   app:
     build:
       context: .
@@ -50,12 +23,9 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ticket_status}
-      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
-      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?set NEXT_SERVER_ACTIONS_ENCRYPTION_KEY in .env}
+      SESSION_SECRET: ${SESSION_SECRET:-super-secret-key-123}
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:-encryption-key-123}
       NODE_ENV: production
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
     ports:
       - "${APP_PORT:-9005}:9005"
 
