@@ -19,10 +19,15 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = "ticket";
 
+export type UploadValidationError = {
+  reason: "too_many" | "too_large" | "bad_type" | "empty";
+  fileName?: string;
+};
+
 export async function saveUploads(files: File[]) {
   const saved = [];
   for (const file of files) {
-    const storageKey = `${randomUUID()}.${file.type.split("/")[1]}`;
+    const storageKey = `${randomUUID()}.${file.type.split("/")[1] || "jpg"}`;
     try {
       await s3Client.send(new PutObjectCommand({
         Bucket: BUCKET_NAME,
@@ -33,7 +38,7 @@ export async function saveUploads(files: File[]) {
       saved.push({
         storageKey,
         originalName: file.name.slice(0, 255),
-        mimeType: file.type as AllowedMime,
+        mimeType: (ALLOWED_MIME_TYPES.includes(file.type as any) ? file.type : "image/jpeg") as AllowedMime,
         sizeBytes: file.size,
       });
     } catch (e) { console.error("Error S3:", e); }
@@ -48,7 +53,7 @@ export async function readUpload(storageKey: string) {
   } catch (e) { return null; }
 }
 
-export function validateFiles(files: File[]) {
+export function validateFiles(files: File[]): UploadValidationError | null {
   if (files.length > MAX_FILES_PER_TICKET) return { reason: "too_many" };
   for (const f of files) {
     if (f.size > MAX_FILE_BYTES) return { reason: "too_large", fileName: f.name };
