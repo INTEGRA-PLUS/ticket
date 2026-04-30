@@ -16,6 +16,14 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
 
+  migrate:
+    build:
+      context: .
+      target: migrator
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-ticket_status}
+    restart: "no"
+
   app:
     build:
       context: .
