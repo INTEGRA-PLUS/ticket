@@ -53,7 +53,7 @@ export default async function AdminTicketPage(
               <CardTitle className="text-2xl">{ticket.subject}</CardTitle>
               <CardDescription>
                 #{ticket.publicId} · abierto el{" "}
-                {new Intl.DateTimeFormat("es", {
+                {new Intl.DateTimeFormat(["es", "en"], {
                   dateStyle: "medium",
                   timeStyle: "short",
                 }).format(ticket.createdAt)}

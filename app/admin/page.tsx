@@ -104,7 +104,7 @@ export default async function AdminDashboardPage() {
                       <PriorityBadge priority={ticket.priority} />
                     </TableCell>
                     <TableCell className="pr-6 text-sm text-muted-foreground">
-                      {new Intl.DateTimeFormat("es", {
+                      {new Intl.DateTimeFormat(["es", "en"], {
                         dateStyle: "medium",
                         timeStyle: "short",
                       }).format(ticket.updatedAt)}

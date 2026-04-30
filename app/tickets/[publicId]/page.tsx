@@ -46,7 +46,7 @@ export default async function TicketPage(
               <CardDescription>
                 Referencia{" "}
                 <span className="font-mono">{ticket.publicId}</span> · abierto el{" "}
-                {new Intl.DateTimeFormat("es", {
+                {new Intl.DateTimeFormat(["es", "en"], {
                   dateStyle: "medium",
                   timeStyle: "short",
                 }).format(ticket.createdAt)}
