@@ -15,7 +15,7 @@ import {
   StatusBadge,
 } from "@/components/ticket-status-badge";
 import { db } from "@/lib/db";
-import { tickets } from "@/lib/db/schema";
+import { tickets, attachments } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +31,11 @@ export default async function TicketPage(
     .limit(1);
 
   if (!ticket) notFound();
+
+  const ticketAttachments = await db
+    .select()
+    .from(attachments)
+    .where(eq(attachments.ticketId, ticket.id));
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-12 md:py-20">
@@ -74,7 +79,38 @@ export default async function TicketPage(
             <p className="text-sm font-medium text-muted-foreground">Detalles</p>
             <p className="whitespace-pre-wrap">{ticket.description}</p>
           </div>
-          <p className="text-sm text-muted-foreground">
+          {ticketAttachments.length > 0 && (
+            <div>
+              <p className="mb-2 text-sm font-medium text-muted-foreground">Adjuntos</p>
+              <div className="flex flex-wrap gap-4">
+                {ticketAttachments.map((a) => (
+                  <a
+                    key={a.id}
+                    href={`/api/attachments/${a.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block overflow-hidden rounded-md border bg-muted/50 transition-colors hover:bg-muted"
+                  >
+                    {a.mimeType.startsWith("image/") ? (
+                      <img
+                        src={`/api/attachments/${a.id}`}
+                        alt={a.originalName}
+                        className="h-32 w-32 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-32 w-32 flex-col items-center justify-center p-2 text-center text-xs">
+                        <span className="w-full truncate">{a.originalName}</span>
+                        <span className="mt-1 text-muted-foreground">
+                          {(a.sizeBytes / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </div>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          <p className="mt-4 text-sm text-muted-foreground">
             Guarda esta página para consultar el estado más reciente. Te responderemos por
             correo electrónico cuando haya una actualización.
           </p>

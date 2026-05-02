@@ -78,8 +78,11 @@ export async function createTicket(
     .getAll("attachments")
     .filter((value): value is File => value instanceof File && value.size > 0);
 
+  console.log("RECEIVED FILES IN createTicket:", files.length, files.map(f => ({ name: f.name, size: f.size, type: f.type })));
+
   const fileError = validateFiles(files);
   if (fileError) {
+    console.log("FILE ERROR:", fileError);
     return { message: describeUploadError(fileError.reason, fileError.fileName) };
   }
 

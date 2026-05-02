@@ -15,7 +15,7 @@ import {
   StatusBadge,
 } from "@/components/ticket-status-badge";
 import { db } from "@/lib/db";
-import { tickets, users } from "@/lib/db/schema";
+import { tickets, users, attachments } from "@/lib/db/schema";
 import { verifySession } from "@/lib/auth/dal";
 import { claimTicket } from "@/lib/tickets/actions";
 
@@ -39,6 +39,11 @@ export default async function AdminTicketPage(
   if (!row) notFound();
 
   const { ticket, assignee } = row;
+
+  const ticketAttachments = await db
+    .select()
+    .from(attachments)
+    .where(eq(attachments.ticketId, ticket.id));
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-8">
@@ -84,6 +89,38 @@ export default async function AdminTicketPage(
             </p>
             <p className="whitespace-pre-wrap">{ticket.description}</p>
           </div>
+
+          {ticketAttachments.length > 0 && (
+            <div className="grid gap-1">
+              <p className="mb-2 text-sm font-medium text-muted-foreground">Adjuntos</p>
+              <div className="flex flex-wrap gap-4">
+                {ticketAttachments.map((a) => (
+                  <a
+                    key={a.id}
+                    href={`/api/attachments/${a.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block overflow-hidden rounded-md border bg-muted/50 transition-colors hover:bg-muted"
+                  >
+                    {a.mimeType.startsWith("image/") ? (
+                      <img
+                        src={`/api/attachments/${a.id}`}
+                        alt={a.originalName}
+                        className="h-32 w-32 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-32 w-32 flex-col items-center justify-center p-2 text-center text-xs">
+                        <span className="w-full truncate">{a.originalName}</span>
+                        <span className="mt-1 text-muted-foreground">
+                          {(a.sizeBytes / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </div>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-1">
             <p className="text-sm font-medium text-muted-foreground">

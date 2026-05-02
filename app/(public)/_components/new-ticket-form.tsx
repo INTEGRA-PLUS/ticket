@@ -26,14 +26,14 @@ export function NewTicketForm({ defaultCreator }: { defaultCreator?: string }) {
   >(createTicket, null);
 
   return (
-    <form action={formAction} className="grid gap-5">
-      <div className="grid gap-2 sm:grid-cols-2">
+    <form action={formAction} className="grid gap-5" suppressHydrationWarning>
+      <div className="grid gap-2 sm:grid-cols-2" suppressHydrationWarning>
         <FieldGroup
           label="Tu nombre"
           name="customerName"
           error={state?.errors?.customerName}
         >
-          <Input name="customerName" autoComplete="name" required />
+          <Input name="customerName" autoComplete="name" required suppressHydrationWarning />
         </FieldGroup>
         <FieldGroup
           label="Correo electrónico"
@@ -45,6 +45,7 @@ export function NewTicketForm({ defaultCreator }: { defaultCreator?: string }) {
             name="customerEmail"
             autoComplete="email"
             required
+            suppressHydrationWarning
           />
         </FieldGroup>
       </div>

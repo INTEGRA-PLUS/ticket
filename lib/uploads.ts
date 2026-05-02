@@ -1,6 +1,10 @@
 import "server-only";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
+import * as dns from "node:dns";
+
+// Fix for Node 18+ DNS resolution issues (EAI_AGAIN) with some IPv4-only domains
+dns.setDefaultResultOrder("ipv4first");
 
 export const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"] as const;
 export type AllowedMime = (typeof ALLOWED_MIME_TYPES)[number];
@@ -39,6 +43,7 @@ export async function saveUploads(files: File[]) {
         Body: Buffer.from(arrayBuffer),
         ContentType: file.type,
       }));
+      console.log(`Successfully uploaded ${file.name} to S3 as ${storageKey}`);
 
       saved.push({
         storageKey,
@@ -47,7 +52,7 @@ export async function saveUploads(files: File[]) {
         sizeBytes: file.size,
       });
     } catch (e) { 
-      console.error("CRITICAL ERROR S3:", e);
+      console.error("CRITICAL ERROR S3 UPLOADING", file.name, ":", e);
       // No lanzamos error para que no rompa la creación del ticket
     }
   }
